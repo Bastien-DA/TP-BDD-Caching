@@ -51,15 +51,15 @@
 ## 📤 Livrables attendus
 
 1. Un push sur une branche a votre nom :
-   - `docker-compose.yml`
-   - le code de l’API
-   - la configuration HAProxy
+    - `docker-compose.yml`
+    - le code de l’API
+    - la configuration HAProxy
 2. Un mini-rapport (≈ 1 page) :
-   - schéma d’architecture
-   - stratégie de lecture/écriture
-   - stratégie de cache
-   - mesures avant/après cache
-   - retour sur la haute disponibilité
+    - schéma d’architecture
+    - stratégie de lecture/écriture
+    - stratégie de cache
+    - mesures avant/après cache
+    - retour sur la haute disponibilité
 
 ---
 
@@ -124,6 +124,8 @@ docker compose ps
 
 ✅ Tous les services doivent être **UP**.
 
+Tous les services sont up
+
 ---
 
 # PARTIE B — Vérifier la réplication PostgreSQL (30 min)
@@ -137,12 +139,16 @@ SELECT pg_is_in_recovery();
 ```
 ➡️ Résultat attendu : `false`
 
+J'ai bien false
+
 ### Replica
 ```bash
 docker exec -it db-replica psql -U app -d appdb
 SELECT pg_is_in_recovery();
 ```
 ➡️ Résultat attendu : `true`
+
+J'ai bien true
 
 ---
 
@@ -169,6 +175,8 @@ SELECT * FROM products;
 ```
 
 ➡️ La ligne doit apparaître après quelques secondes.
+
+La ligne apparait bien
 
 ---
 
@@ -217,9 +225,9 @@ Règles :
 - Clé : `product:{id}`
 - TTL : 30 à 120 secondes (à justifier)
 - Cache-aside :
-  1. Lecture Redis
-  2. Miss → DB replica
-  3. Mise en cache
+    1. Lecture Redis
+    2. Miss → DB replica
+    3. Mise en cache
 
 ---
 
@@ -243,6 +251,8 @@ Pourquoi peut-on lire une ancienne valeur ?
 - latence de réplication
 - effet du cache
 
+Il y a une latence de replication le temps que la modification arrive sur la replica. Si on lit juste après, on peut lire l'ancienne valeur. De plus, si la valeur est en cache, on lira aussi l'ancienne valeur.
+
 ---
 
 # PARTIE E — Résilience : pannes contrôlées (30 min)
@@ -254,6 +264,8 @@ docker compose stop redis
 ```
 
 ➡️ L’API doit continuer à fonctionner (sans cache).
+
+Elle fonctionne sans cache
 
 ---
 
@@ -294,6 +306,7 @@ SELECT pg_is_in_recovery();
 
 ➡️ Résultat attendu : `false`
 
+J'ai bien false
 ---
 
 ## F3. Bascule HAProxy
@@ -319,14 +332,20 @@ Relancer une écriture via l’API.
 
 ➡️ Le service doit refonctionner sans modifier l’API.
 
+Tout fonctionne
+
 ---
 
 ## 📝 Questions finales (rapport)
 
 1. Différence entre réplication et haute disponibilité ?
+Les différences sont que la réplication consiste à copier les données d'une base de données principale vers une ou plusieurs bases de données secondaires pour assurer la redondance et la disponibilité des données. En revanche, la haute disponibilité englobe permet de minimiser les temps d'arrêt et à garantir que les services restent accessibles même en cas de panne.
 2. Qu’est-ce qui est manuel ici ? Automatique ?
+Ce qui est manuel sont la conf de la replication et qu'on fasse de la haute disponibilité (passer de primary a replica comme base principale par exemple)
 3. Risques cache + réplication ?
+Les risques incluent la possibilité de lire des données obsolètes en raison de la latence de réplication entre le primary et le replica, ainsi que des incohérences si les données mises en cache ne sont pas invalidées correctement après une mise à jour.
 4. Comment améliorer cette architecture en production ?
+Pour améliorer cette architecture en production, on pourrait mettre en place un système de failover automatique (comme Patroni) pour gérer la promotion des replicas en cas de panne du primary. On pourrait également utiliser HAProxy avec des vérifications de santé plus avancées et configurer un cluster Redis avec Sentinel pour assurer la haute disponibilité du cache.
 
 ---
 

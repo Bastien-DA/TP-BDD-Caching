@@ -1,5 +1,5 @@
 import pgPromise from "pg-promise";
-import redis from './redis';
+import { safeRedisGet, safeRedisSetex, safeRedisDel } from './redis';
 
 const pgp = pgPromise();
 const db = pgp('postgres://app:app_pwd@localhost:5439/appdb');
@@ -7,7 +7,7 @@ const db = pgp('postgres://app:app_pwd@localhost:5439/appdb');
 async function GetProduct(id: number) {
   try {
     // Vérifier le cache
-    const cached = await redis.get(`product:${id}`);
+    const cached = await safeRedisGet(`product:${id}`);
     if (cached) {
         return JSON.parse(cached);
     }
@@ -15,7 +15,7 @@ async function GetProduct(id: number) {
     // Si pas en cache, récupérer de la DB
     const product = await db.one('SELECT * FROM products WHERE id = $1', [id]);
 
-    await redis.setex(`product:${id}`, 120, JSON.stringify(product));
+    await safeRedisSetex(`product:${id}`, 120, JSON.stringify(product));
 
     return product;
   } catch (error) {
@@ -31,7 +31,7 @@ async function AddProducts(name: string, price_cents: number) {
       [name, price_cents]
     );
 
-    await redis.setex(`product:${result.id}`, 120, JSON.stringify(result));
+    await safeRedisSetex(`product:${result.id}`, 120, JSON.stringify(result));
 
     return result;
   } catch (error) {
@@ -48,10 +48,10 @@ async function UpdateProduct(id: number, name: string, price_cents: number) {
         );
 
         // Invalider l'ancienne clé
-        await redis.del(`product:${id}`);
+        await safeRedisDel(`product:${id}`);
 
         // Mettre en cache le produit mis à jour
-        await redis.setex(`product:${id}`, 120, JSON.stringify(result));
+        await safeRedisSetex(`product:${id}`, 120, JSON.stringify(result));
 
         return result;
     } catch (error) {
