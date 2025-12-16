@@ -43,5 +43,6 @@ services:
       - db-replica
     ports:
       - "5439:5432"
+      - "5440:5433"
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
