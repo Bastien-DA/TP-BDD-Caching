@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "express": "^5.2.1",
+    "ioredis": "^5.8.2",
+    "pg": "^8.16.3",
+    "pg-promise": "^12.3.0",
+    "redis": "^5.10.0"
+  }
+}
